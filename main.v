@@ -46,24 +46,22 @@ fn main() {
     )
 
     //lancement du programme/de la fenêtre
-	mut c := 0
+	mut w := 0
 	mut x := 0
 	mut y := 0
 	for i, mut line in app.tiles_states{
 		for j, mut tile in line{
 			tile = int(rd.int_in_range(0,28) or {panic(err)}/10)
 			if tile == 0{
-				c += 1
-			}
-			if tile == 1{
+				w += 1
+			}else if tile == 1{
 				x += 1
-			}
-			if tile == 2{
+			}else if tile == 2{
 				y += 1
 			}
 		}
 	}
-	println(c)
+	println(w)
 	println(x)
 	println(y)
     app.gg.run()
@@ -75,26 +73,35 @@ fn on_frame(mut app App) {
 
 	mut water := 0
 	for i := app.tiles_states.len-1; i >= 0; i-- {
+		/*		mut rand_tile_list := []int{len:nb_tiles, init:index}
+		for _ in 0..nb_tiles{
+			rand_index := rd.int_in_range(0, rand_tile_list.len) or {panic(err)}
+			j := rand_tile_list[rand_index]
+			rand_tile_list.delete(rand_index)
+			mut tile := app.tiles_states[i][j]*/
 		for j, mut tile in app.tiles_states[i]{
 			if tile == 1{
-				water += 1
 				if i != app.tiles_states.len-1 && app.tiles_states[i+1][j] == 0{
 					tile = 0
 					app.tiles_states[i+1][j] = 1
+					water += 1
 				}else{
 					if  j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // droite libre (+)
 						if j != 0 && app.tiles_states[i][j-1] == 0{ // deux cotés libres
 							if rd.int_in_range(0,2) or {panic(err)} == 0{
 								tile = 0
 								app.tiles_states[i][j+1] = 1
+								water += 1
 							}else{
 								tile = 0
 								app.tiles_states[i][j-1] = 1
+								water += 1
 							}
 						}else{ // que le droite (+)
-							if rd.int_in_range(0,2) or {panic(err)} == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
+							if rd.int_in_range(0,5) or {panic(err)} == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
 								tile = 0
 								app.tiles_states[i][j+1] = 1
+								water += 1
 							}
 						}
 					}else{ // pas le droite (+)
@@ -102,12 +109,15 @@ fn on_frame(mut app App) {
 							if rd.int_in_range(0,2) or {panic(err)} == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
 								tile = 0
 								app.tiles_states[i][j-1] = 1
+								water += 1
 							}
-						}
-						//Aucun des deux
-						if i != 0 && app.tiles_states[i-1][j] == 0 && rd.int_in_range(0,10) or {panic(err)} == 0{
-							tile = 0
-							app.tiles_states[i-1][j] = 1
+						}else{
+							//Aucun des deux
+							if i != 0 && app.tiles_states[i-1][j] == 0 && rd.int_in_range(0,10) or {panic(err)} == 0{
+								tile = 0
+								app.tiles_states[i-1][j] = 1
+								water += 1
+							}
 						}
 					}
 				}
@@ -126,7 +136,7 @@ fn on_frame(mut app App) {
 	app.gg.begin()
 	app.gg.show_fps()
 	app.gg.draw_rect_filled(40, 0, 200, 20, gx.black)
-	app.gg.draw_text(40, 0, "Water particles: ${water}", text_cfg)
+	app.gg.draw_text(40, 0, "Nb water updates: ${water}", text_cfg)
 	app.gg.end(how: .passthru)
 }
 
