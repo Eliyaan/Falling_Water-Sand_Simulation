@@ -1,4 +1,6 @@
 module main
+
+import sokol.sgl
 import gg
 import gx
 import rand as rd
@@ -11,7 +13,7 @@ const (
 
 	
     pixel_size = 1
-	nb_tiles = 700
+	nb_tiles = 600
 	refresh = 65000
 	sim_size = pixel_size * nb_tiles
     text_cfg = gx.TextCfg{color: gx.green, size: 20, align: .left, vertical_align: .top}
@@ -153,23 +155,27 @@ fn on_frame(mut app App) {
     //Draw
 	app.gg.begin()
 	app.gg.draw_rect_filled(30, 19, pixel_size*nb_tiles, pixel_size*nb_tiles, color(0))
-
-	for i, water_tile in app.water_tiles_coords{  // ptet changer pour app.gg.draw_pixels pour pouvoir juste passer 1 fois un array
-		app.gg.draw_pixel(water_tile[1]*pixel_size+30, water_tile[0]*pixel_size+20, gx.Color{66, 135, 245, 255})
-		if i%refresh == refresh-1{
-			app.gg.end(how: .passthru)
-			app.gg.begin()
-		}
+	mut i := 0
+	for (i+1)*refresh < app.water_tiles_coords.len{
+		custom_draw_pixels(app.water_tiles_coords#[i*refresh..i+1*refresh], gx.Color{66, 135, 245, 255}, app.gg)
+		i += 1
+		app.gg.end(how: .passthru)
+		app.gg.begin()
 	}
+	custom_draw_pixels(app.water_tiles_coords#[i*refresh..], gx.Color{66, 135, 245, 255}, app.gg)
+	
+
 	app.gg.end(how: .passthru)
 	app.gg.begin()
-	for i, wall_tile in app.wall_tiles_coords{
-		app.gg.draw_pixel(wall_tile[1]*pixel_size+30, wall_tile[0]*pixel_size+20, gx.black)
-		if i%refresh == refresh-1{
-			app.gg.end(how: .passthru)
-			app.gg.begin()
-		}
+	mut j := 0
+	for (j+1)*refresh < app.wall_tiles_coords.len{
+		custom_draw_pixels(app.wall_tiles_coords#[j*refresh..j+1*refresh], gx.black, app.gg)
+		j += 1
+		app.gg.end(how: .passthru)
+		app.gg.begin()
 	}
+	custom_draw_pixels(app.wall_tiles_coords#[j*refresh..], gx.black, app.gg)
+	app.gg.end(how: .passthru)
 	
 	app.gg.begin()
 	app.gg.show_fps()
@@ -177,6 +183,27 @@ fn on_frame(mut app App) {
 	app.gg.draw_text(40, 0, "Nb water updates: ${water_updates}", text_cfg)
 	app.gg.end(how: .passthru)
 }
+
+[direct_array_access; inline]
+fn custom_draw_pixels(points [][]int, c gx.Color, ctx &gg.Context) {
+	sgl.c4b(c.r, c.g, c.b, c.a)
+	sgl.begin_points()
+	for i, point in points {
+		x, y := point[0], point[1]
+		sgl.v2f(y * ctx.scale + 30, x * ctx.scale + 20)
+	}
+	sgl.end()
+}
+
+[inline]
+fn custom_draw_pixel(x f32, y f32, c gx.Color, ctx &gg.Context) {
+	sgl.c4b(c.r, c.g, c.b, c.a)
+
+	sgl.begin_points()
+	sgl.v2f(x * ctx.scale, y * ctx.scale)
+	sgl.end()
+}
+
 
 fn on_event(e &gg.Event, mut app App){
     match e.typ {
