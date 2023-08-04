@@ -2,6 +2,8 @@ module main
 import gg
 import gx
 import rand as rd
+import math.bits
+
 
 const (
     win_width    = 901
@@ -9,18 +11,38 @@ const (
     bg_color     = gx.black
 
 	
-    pixel_size = 4
-	nb_tiles = 200
+    pixel_size = 2
+	nb_tiles = 50
 	sim_size = pixel_size * nb_tiles
     text_cfg = gx.TextCfg{color: gx.green, size: 20, align: .left, vertical_align: .top}
-	color_map = {
-    	0: gx.white
-    	1: gx.Color{66, 135, 245, 255}
-		2: gx.black
-	}
 )
 
+[inline]
+fn color(nb u8) gx.Color{
+	return match nb{
+		0 {gx.white}
+    	1 {gx.Color{66, 135, 245, 255}}
+		2 {gx.black}
+		else{gx.red}
+	}
+}
 
+[inline]
+fn u32n(max u32) int{
+	mask := (u32(1) << (bits.len_32(max) + 1)) - 1
+	for {
+		value := default_rng.u32() & mask
+		if value < max {
+			return int(value)
+		}
+	}
+	return 0
+}
+
+[inline]
+fn custom_int_in_range(min int, max int) int{
+	return min + u32n(u32(max))
+}
 
 struct App {
 mut:
@@ -51,7 +73,7 @@ fn main() {
 	mut y := 0
 	for i, mut line in app.tiles_states{
 		for j, mut tile in line{
-			tile = int(rd.int_in_range(0,28) or {panic(err)}/10)
+			tile = int(custom_int_in_range(0,20)/10)
 			if tile == 0{
 				w += 1
 			}else if tile == 1{
@@ -67,54 +89,55 @@ fn main() {
     app.gg.run()
 }
 
-
+[direct_array_access]
 fn on_frame(mut app App) {
 	//Process
 
 	mut water := 0
 	for i := app.tiles_states.len-1; i >= 0; i-- {
-		/*		mut rand_tile_list := []int{len:nb_tiles, init:index}
-		for _ in 0..nb_tiles{
-			rand_index := rd.int_in_range(0, rand_tile_list.len) or {panic(err)}
+		mut rand_tile_list := []int{len:nb_tiles, init:index}
+		for k in 0..nb_tiles{  // 		for j in 0..app.tiles_states[i].len{
+			mut rand_index := custom_int_in_range(0, rand_tile_list.len-k)
+			for rand_tile_list[rand_index] == -1{
+				rand_index += 1
+			}
 			j := rand_tile_list[rand_index]
-			rand_tile_list.delete(rand_index)
-			mut tile := app.tiles_states[i][j]*/
-		for j, mut tile in app.tiles_states[i]{
-			if tile == 1{
+			rand_tile_list[rand_index] = -1
+			if app.tiles_states[i][j] == 1{
 				if i != app.tiles_states.len-1 && app.tiles_states[i+1][j] == 0{
-					tile = 0
+					app.tiles_states[i][j]= 0
 					app.tiles_states[i+1][j] = 1
 					water += 1
 				}else{
 					if  j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // droite libre (+)
 						if j != 0 && app.tiles_states[i][j-1] == 0{ // deux cotés libres
-							if rd.int_in_range(0,2) or {panic(err)} == 0{
-								tile = 0
+							if custom_int_in_range(0,2) == 0{
+								app.tiles_states[i][j]= 0
 								app.tiles_states[i][j+1] = 1
 								water += 1
 							}else{
-								tile = 0
+								app.tiles_states[i][j]= 0
 								app.tiles_states[i][j-1] = 1
 								water += 1
 							}
 						}else{ // que le droite (+)
-							if rd.int_in_range(0,5) or {panic(err)} == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
-								tile = 0
+							if custom_int_in_range(0,5) == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
+								app.tiles_states[i][j]= 0
 								app.tiles_states[i][j+1] = 1
 								water += 1
 							}
 						}
 					}else{ // pas le droite (+)
 						if j != 0 && app.tiles_states[i][j-1] == 0{  // que le gauche (-)
-							if rd.int_in_range(0,2) or {panic(err)} == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
-								tile = 0
+							if custom_int_in_range(0,2) == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
+								app.tiles_states[i][j]= 0
 								app.tiles_states[i][j-1] = 1
 								water += 1
 							}
 						}else{
 							//Aucun des deux
-							if i != 0 && app.tiles_states[i-1][j] == 0 && rd.int_in_range(0,10) or {panic(err)} == 0{
-								tile = 0
+							if i != 0 && app.tiles_states[i-1][j] == 0 && custom_int_in_range(0,10) == 0{
+								app.tiles_states[i][j]= 0
 								app.tiles_states[i-1][j] = 1
 								water += 1
 							}
@@ -129,7 +152,7 @@ fn on_frame(mut app App) {
 	for i, line in app.tiles_states{
 		app.gg.begin()
 		for j, tile in line{
-			app.gg.draw_square_filled(j*pixel_size+30, i*pixel_size+20, pixel_size, color_map[tile])
+			app.gg.draw_rect_filled(j*pixel_size+30, i*pixel_size+20, pixel_size, pixel_size, color(tile))
 		}
 		app.gg.end(how: .passthru)
 	}
