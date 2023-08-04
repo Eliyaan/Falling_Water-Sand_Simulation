@@ -4,16 +4,15 @@ import gx
 import rand as rd
 import math.bits
 
-
 const (
-    win_width    = 941
-    win_height   = 941
+    win_width    = 1041
+    win_height   = 1041
     bg_color     = gx.black
 
 	
-    pixel_size = 2
-	nb_tiles = 170
-	refresh = 11000
+    pixel_size = 1
+	nb_tiles = 700
+	refresh = 65000
 	sim_size = pixel_size * nb_tiles
     text_cfg = gx.TextCfg{color: gx.green, size: 20, align: .left, vertical_align: .top}
 )
@@ -62,12 +61,12 @@ fn main() {
         width: win_width
         height: win_height
         create_window: true
+		fullscreen: true
         window_title: '- Application -'
         user_data: app
         bg_color: bg_color
         frame_fn: on_frame
         event_fn: on_event
-        sample_count: 6
     )
 
     //lancement du programme/de la fenêtre
@@ -153,10 +152,10 @@ fn on_frame(mut app App) {
 
     //Draw
 	app.gg.begin()
-	app.gg.draw_rect_filled(30, 20, pixel_size*nb_tiles, pixel_size*nb_tiles, color(0))
+	app.gg.draw_rect_filled(30, 19, pixel_size*nb_tiles, pixel_size*nb_tiles, color(0))
 
-	for i, water_tile in app.water_tiles_coords{
-		app.gg.draw_rect_filled(water_tile[1]*pixel_size+30, water_tile[0]*pixel_size+20, pixel_size, pixel_size, gx.Color{66, 135, 245, 255})
+	for i, water_tile in app.water_tiles_coords{  // ptet changer pour app.gg.draw_pixels pour pouvoir juste passer 1 fois un array
+		app.gg.draw_pixel(water_tile[1]*pixel_size+30, water_tile[0]*pixel_size+20, gx.Color{66, 135, 245, 255})
 		if i%refresh == refresh-1{
 			app.gg.end(how: .passthru)
 			app.gg.begin()
@@ -165,7 +164,7 @@ fn on_frame(mut app App) {
 	app.gg.end(how: .passthru)
 	app.gg.begin()
 	for i, wall_tile in app.wall_tiles_coords{
-		app.gg.draw_rect_filled(wall_tile[1]*pixel_size+30, wall_tile[0]*pixel_size+20, pixel_size, pixel_size, gx.black)
+		app.gg.draw_pixel(wall_tile[1]*pixel_size+30, wall_tile[0]*pixel_size+20, gx.black)
 		if i%refresh == refresh-1{
 			app.gg.end(how: .passthru)
 			app.gg.begin()
