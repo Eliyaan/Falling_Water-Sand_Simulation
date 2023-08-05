@@ -138,10 +138,41 @@ fn on_frame(mut app App) {
 		i := w_coo[0]
 		j := w_coo[1]
 		if app.tiles_states[i][j] == 1{
-			if i != app.tiles_states.len-1 && app.tiles_states[i+1][j] == 0{
-				app.tiles_states[i][j]= 0
-				app.tiles_states[i+1][j] = 1
-				w_coo[0] += 1
+			if i != app.tiles_states.len-1 && app.tiles_states[i+1][j] == 0{ // Haut
+				if  j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // droite libre (+)
+					if j != 0 && app.tiles_states[i][j-1] == 0{ // deux cotés libres + haut = descendre
+						app.tiles_states[i][j]= 0
+						app.tiles_states[i+1][j] = 1
+						w_coo[0] += 1
+					}else{ // que le droite + haut
+						if custom_int_in_range(0,2) == 0{
+							app.tiles_states[i][j]= 0
+							app.tiles_states[i][j+1] = 1
+							w_coo[1] += 1
+						}else{
+							app.tiles_states[i][j]= 0
+							app.tiles_states[i+1][j] = 1
+							w_coo[0] += 1
+						}
+					}
+				}else{ // pas le droite (+)
+					if j != 0 && app.tiles_states[i][j-1] == 0{  // gauche + haut
+						if custom_int_in_range(0,2) == 0{
+							app.tiles_states[i][j]= 0
+							app.tiles_states[i][j-1] = 1
+							w_coo[1] -= 1
+						}else{
+							app.tiles_states[i][j]= 0
+							app.tiles_states[i+1][j] = 1
+							w_coo[0] += 1
+						}
+					}else{
+						//Aucun des deux, que le haut = descente
+						app.tiles_states[i][j]= 0
+						app.tiles_states[i+1][j] = 1
+						w_coo[0] += 1
+					}
+				}
 			}else{
 				if  j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // droite libre (+)
 					if j != 0 && app.tiles_states[i][j-1] == 0{ // deux cotés libres
