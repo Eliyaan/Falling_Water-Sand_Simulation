@@ -14,7 +14,7 @@ const (
 
 	
     pixel_size = 1
-	nb_tiles = 500
+	nb_tiles = 700
 	refresh = 65000
 	sim_size = pixel_size * nb_tiles
     text_cfg = gx.TextCfg{color: gx.green, size: 20, align: .left, vertical_align: .top}
@@ -115,7 +115,14 @@ fn on_frame(mut app App) {
 					if app.mouse_coords[0]+c < nb_tiles && app.mouse_coords[0]+c >= 0 && app.mouse_coords[1]+l < nb_tiles && app.mouse_coords[1]+l >= 0 {
 						if app.paint_type == 1 && app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] == 0{
 							app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] = 1
-							app.water_tiles_coords << [[app.mouse_coords[1]+l, app.mouse_coords[0]+c]]
+							if app.water_tiles_coords.len == 0 {
+								app.water_tiles_coords << [[app.mouse_coords[1]+l, app.mouse_coords[0]+c]]
+							}else{
+								rnd := custom_int_in_range(0, app.water_tiles_coords.len)
+								switch_tmp := app.water_tiles_coords[rnd]
+								app.water_tiles_coords[rnd] = [app.mouse_coords[1]+l, app.mouse_coords[0]+c]
+								app.water_tiles_coords << switch_tmp
+							}
 						}else if app.paint_type == 2 && app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] == 0{
 							app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] = 2
 							app.wall_tiles_coords << [[app.mouse_coords[1]+l, app.mouse_coords[0]+c]]
@@ -175,7 +182,7 @@ fn on_frame(mut app App) {
 	app.gg.draw_rect_filled(x_offset, y_offset-1, pixel_size*nb_tiles, pixel_size*nb_tiles, color(0))
 		app.gg.end(how: .passthru)
 	mut i := 0
-	for (i+1)*refresh < app.water_tiles_coords.len{
+	for (i+1)*refresh < app.water_tiles_coords.len{  // faire new syst avec check si la ligne est dj à jour (la même qu'à la frame d'avant) pi ptet essayer les rectangles de plusieurs pixels
 		app.gg.begin()
 		custom_draw_pixels(app.water_tiles_coords#[i*refresh..i+1*refresh], gx.Color{66, 135, 245, 255}, app.gg)
 		i += 1
@@ -186,7 +193,7 @@ fn on_frame(mut app App) {
 	app.gg.end(how: .passthru)
 
 	mut j := 0
-	for (j+1)*refresh < app.wall_tiles_coords.len{
+	for (j+1)*refresh < app.wall_tiles_coords.len{  // New syst où pas de réaffichage du mur sis il était dj là avant
 		app.gg.begin()
 		custom_draw_pixels(app.wall_tiles_coords#[j*refresh..j+1*refresh], gx.black, app.gg)
 		j += 1
@@ -198,7 +205,7 @@ fn on_frame(mut app App) {
 	
 	app.gg.begin()
 	app.gg.show_fps()
-	app.gg.draw_rect_filled(40, 0, 220, 20, gx.black)
+	app.gg.draw_rect_filled(40, 0, 220, 19, gx.black)
 	app.gg.draw_text(40, 0, "Paint size: ${app.paint_size/2}, Paint type: ${app.paint_type}", text_cfg)
 	app.gg.end(how: .passthru)
 }
