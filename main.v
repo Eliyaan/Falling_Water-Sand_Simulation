@@ -1,4 +1,9 @@
 module main
+//check si y'a de l'air dans les lignes proches pour voir si update requise ou pas
+// implementer les nouveaux déplacements
+// trouver pk ca skip des particules ? #help ?
+// nouveau syst de rendu sinon avec rect 
+
 
 import sokol.sgl
 import gg
