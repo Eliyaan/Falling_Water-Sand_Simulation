@@ -5,6 +5,7 @@ import gg
 import gx
 import rand as rd
 import math.bits
+import math
 
 const (
     win_width    = 1041
@@ -13,10 +14,12 @@ const (
 
 	
     pixel_size = 1
-	nb_tiles = 600
+	nb_tiles = 500
 	refresh = 65000
 	sim_size = pixel_size * nb_tiles
     text_cfg = gx.TextCfg{color: gx.green, size: 20, align: .left, vertical_align: .top}
+	x_offset = 30
+	y_offset = 20
 )
 
 [inline]
@@ -43,7 +46,7 @@ fn u32n(max u32) int{
 
 [inline]
 fn custom_int_in_range(min int, max int) int{
-	return min + u32n(u32(max))
+	return min + u32n(u32(max-min))
 }
 
 struct App {
@@ -52,6 +55,10 @@ mut:
 	tiles_states [][]u8 = [][]u8{len:nb_tiles, cap:nb_tiles, init:[]u8{len:nb_tiles, cap:nb_tiles, init:u8(0)}}  // [Ligne][colonne]
 	water_tiles_coords [][]int 
 	wall_tiles_coords [][]int 
+	mouse_held bool
+	mouse_coords [2]int 
+	paint_type int = 1
+	paint_size int = 6
 }
 
 
@@ -72,18 +79,21 @@ fn main() {
     )
 
     //lancement du programme/de la fenêtre
+	/*
 	mut w := 0
 	mut x := 0
 	mut y := 0
 	for i, mut line in app.tiles_states{
 		for j, mut tile in line{
-			tile = int(custom_int_in_range(0,28)/10)
-			if tile == 0{
+			rnd := custom_int_in_range(0,20)
+			if rnd < 10{
 				w += 1
-			}else if tile == 1{
+			}else if rnd < 20{
+				tile = 1
 				app.water_tiles_coords << [[i, j]]
 				x += 1
-			}else if tile == 2{
+			}else if rnd < 30{
+				tile = 2
 				app.wall_tiles_coords << [[i, j]]
 				y += 1
 			}
@@ -91,14 +101,32 @@ fn main() {
 	}
 	println(w)
 	println(x)
-	println(y)
+	println(y)*/
     app.gg.run()
 }
 
 [direct_array_access]
 fn on_frame(mut app App) {
+	//painting
+	if app.mouse_held{
+		for l in -app.paint_size..1+app.paint_size{
+			for c in -app.paint_size..1+app.paint_size{
+				if l*l+c*c < (app.paint_size*app.paint_size){
+					if app.mouse_coords[0]+c < nb_tiles && app.mouse_coords[0]+c >= 0 && app.mouse_coords[1]+l < nb_tiles && app.mouse_coords[1]+l >= 0 {
+						if app.paint_type == 1 && app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] == 0{
+							app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] = 1
+							app.water_tiles_coords << [[app.mouse_coords[1]+l, app.mouse_coords[0]+c]]
+						}else if app.paint_type == 2 && app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] == 0{
+							app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] = 2
+							app.wall_tiles_coords << [[app.mouse_coords[1]+l, app.mouse_coords[0]+c]]
+						}
+					}
+				}
+			}
+		}
+	}
+
 	//Process
-	mut water_updates := 0
 	for mut w_coo in app.water_tiles_coords{
 		i := w_coo[0]
 		j := w_coo[1]
@@ -107,7 +135,6 @@ fn on_frame(mut app App) {
 				app.tiles_states[i][j]= 0
 				app.tiles_states[i+1][j] = 1
 				w_coo[0] += 1
-				water_updates+= 1
 			}else{
 				if  j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // droite libre (+)
 					if j != 0 && app.tiles_states[i][j-1] == 0{ // deux cotés libres
@@ -115,36 +142,27 @@ fn on_frame(mut app App) {
 							app.tiles_states[i][j]= 0
 							app.tiles_states[i][j+1] = 1
 							w_coo[1] += 1
-							water_updates+= 1
 						}else{
 							app.tiles_states[i][j]= 0
 							app.tiles_states[i][j-1] = 1
 							w_coo[1] -= 1
-							water_updates+= 1
 						}
 					}else{ // que le droite (+)
-						if custom_int_in_range(0,2) == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
-							app.tiles_states[i][j]= 0
-							app.tiles_states[i][j+1] = 1
-							w_coo[1] += 1
-							water_updates+= 1
-						}
+						app.tiles_states[i][j]= 0
+						app.tiles_states[i][j+1] = 1
+						w_coo[1] += 1
 					}
 				}else{ // pas le droite (+)
 					if j != 0 && app.tiles_states[i][j-1] == 0{  // que le gauche (-)
-						if custom_int_in_range(0,2) == 0{// si on enlevais le random ca coulerai tout le temps vers le coté libre
-							app.tiles_states[i][j]= 0
-							app.tiles_states[i][j-1] = 1
-							w_coo[1] -= 1
-							water_updates+= 1
-						}
+						app.tiles_states[i][j]= 0
+						app.tiles_states[i][j-1] = 1
+						w_coo[1] -= 1
 					}else{
 						//Aucun des deux
 						if i != 0 && app.tiles_states[i-1][j] == 0 && custom_int_in_range(0,5) == 0{
 							app.tiles_states[i][j]= 0
 							app.tiles_states[i-1][j] = 1
 							w_coo[0] -= 1
-							water_updates+= 1
 						}
 					}
 				}
@@ -154,33 +172,34 @@ fn on_frame(mut app App) {
 
     //Draw
 	app.gg.begin()
-	app.gg.draw_rect_filled(30, 19, pixel_size*nb_tiles, pixel_size*nb_tiles, color(0))
+	app.gg.draw_rect_filled(x_offset, y_offset-1, pixel_size*nb_tiles, pixel_size*nb_tiles, color(0))
+		app.gg.end(how: .passthru)
 	mut i := 0
 	for (i+1)*refresh < app.water_tiles_coords.len{
+		app.gg.begin()
 		custom_draw_pixels(app.water_tiles_coords#[i*refresh..i+1*refresh], gx.Color{66, 135, 245, 255}, app.gg)
 		i += 1
 		app.gg.end(how: .passthru)
-		app.gg.begin()
 	}
-	custom_draw_pixels(app.water_tiles_coords#[i*refresh..], gx.Color{66, 135, 245, 255}, app.gg)
-	
-
-	app.gg.end(how: .passthru)
 	app.gg.begin()
+	custom_draw_pixels(app.water_tiles_coords#[i*refresh..], gx.Color{66, 135, 245, 255}, app.gg)
+	app.gg.end(how: .passthru)
+
 	mut j := 0
 	for (j+1)*refresh < app.wall_tiles_coords.len{
+		app.gg.begin()
 		custom_draw_pixels(app.wall_tiles_coords#[j*refresh..j+1*refresh], gx.black, app.gg)
 		j += 1
 		app.gg.end(how: .passthru)
-		app.gg.begin()
 	}
+	app.gg.begin()
 	custom_draw_pixels(app.wall_tiles_coords#[j*refresh..], gx.black, app.gg)
 	app.gg.end(how: .passthru)
 	
 	app.gg.begin()
 	app.gg.show_fps()
 	app.gg.draw_rect_filled(40, 0, 220, 20, gx.black)
-	app.gg.draw_text(40, 0, "Nb water updates: ${water_updates}", text_cfg)
+	app.gg.draw_text(40, 0, "Paint size: ${app.paint_size/2}, Paint type: ${app.paint_type}", text_cfg)
 	app.gg.end(how: .passthru)
 }
 
@@ -188,9 +207,9 @@ fn on_frame(mut app App) {
 fn custom_draw_pixels(points [][]int, c gx.Color, ctx &gg.Context) {
 	sgl.c4b(c.r, c.g, c.b, c.a)
 	sgl.begin_points()
-	for i, point in points {
+	for point in points {
 		x, y := point[0], point[1]
-		sgl.v2f(y * ctx.scale + 30, x * ctx.scale + 20)
+		sgl.v2f(y * ctx.scale + x_offset, x * ctx.scale + y_offset)
 	}
 	sgl.end()
 }
@@ -210,14 +229,30 @@ fn on_event(e &gg.Event, mut app App){
         .key_down {
             match e.key_code {
                 .escape {app.gg.quit()}
+				.up{app.paint_type += 1}
+				.down{app.paint_type -= 1}
                 else {}
             }
         }
         .mouse_up {
             match e.mouse_button{
-                .left{}
+                .left{app.mouse_held = false}
                 else{}
-        }}
+        	}
+		}
+        .mouse_down {
+            match e.mouse_button{
+                .left{app.mouse_held = true}
+                else{}
+        	}
+		}
+		.mouse_scroll{
+			app.paint_size += int(math.sign(e.scroll_y))*2
+		}
         else {}
     }
+	if app.mouse_held{
+		app.mouse_coords[0] = int(e.mouse_x) - x_offset
+		app.mouse_coords[1] = int(e.mouse_y) - y_offset
+	}
 }
