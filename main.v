@@ -85,29 +85,6 @@ fn main() {
     )
 
     //lancement du programme/de la fenêtre
-	/*
-	mut w := 0
-	mut x := 0
-	mut y := 0
-	for i, mut line in app.tiles_states{
-		for j, mut tile in line{
-			rnd := custom_int_in_range(0,20)
-			if rnd < 10{
-				w += 1
-			}else if rnd < 20{
-				tile = 1
-				app.water_tiles_coords << [[i, j]]
-				x += 1
-			}else if rnd < 30{
-				tile = 2
-				app.wall_tiles_coords << [[i, j]]
-				y += 1
-			}
-		}
-	}
-	println(w)
-	println(x)
-	println(y)*/
     app.gg.run()
 }
 
