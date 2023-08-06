@@ -223,19 +223,35 @@ fn on_frame(mut app App) {
 			j := w_coo[1]
 			if i != app.tiles_states.len-1 && app.tiles_states[i+1][j] == 0{ //bas libre
 				if i != 0 && app.tiles_states[i-1][j] == 0{ // Haut libre = descendre
-					app.tiles_states[i][j]= 0
-					app.screen_pixels[i][j] = 0xFFFF_FFFF
-					app.tiles_states[i+1][j] = 1
-					app.screen_pixels[i+1][j] = blue
-					w_coo[0] += 1
+					if i != app.tiles_states.len-2 && app.tiles_states[i+2][j] == 0{
+						app.tiles_states[i][j]= 0
+						app.screen_pixels[i][j] = 0xFFFF_FFFF
+						app.tiles_states[i+2][j] = 1
+						app.screen_pixels[i+2][j] = blue
+						w_coo[0] += 2
+					}else{
+						app.tiles_states[i][j]= 0
+						app.screen_pixels[i][j] = 0xFFFF_FFFF
+						app.tiles_states[i+1][j] = 1
+						app.screen_pixels[i+1][j] = blue
+						w_coo[0] += 1
+					}
 				}else{ // haut plein
 					if j != 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
 						if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // deux cotés libres = descendre
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i+1][j] = 1
-							app.screen_pixels[i+1][j] = blue
-							w_coo[0] += 1
+							if i != app.tiles_states.len-2 && app.tiles_states[i+2][j] == 0{
+								app.tiles_states[i][j]= 0
+								app.screen_pixels[i][j] = 0xFFFF_FFFF
+								app.tiles_states[i+2][j] = 1
+								app.screen_pixels[i+2][j] = blue
+								w_coo[0] += 2
+							}else{
+								app.tiles_states[i][j]= 0
+								app.screen_pixels[i][j] = 0xFFFF_FFFF
+								app.tiles_states[i+1][j] = 1
+								app.screen_pixels[i+1][j] = blue
+								w_coo[0] += 1
+							}
 						}else{ // droite oqp et gauche libre et haut plein
 							if custom_int_in_range(0, 2) == 0{
 								app.tiles_states[i][j]= 0
