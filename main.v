@@ -21,7 +21,7 @@ const (
 	y_offset = 30
 	blue = u32(0xFFFF_B700)
 	blue_ni = int(0x00B7_FFFF) //non inverted
-	black = u32(0x0000_00FF)
+	black = u32(0xFF00_0000)
 	black_ni = int(0x0000_00FF) //non inverted
 	orange = u32(0xFF42_87F5)
 	white = u32(0xFFFF_FFFF)
@@ -80,7 +80,7 @@ fn main() {
         width: win_width
         height: win_height
         create_window: true
-        window_title: 'Water/Sand simutation'
+        window_title: 'Water/Sand simulation'
         user_data: app
         bg_color: bg_color
 		init_fn: graphics_init
@@ -106,9 +106,17 @@ fn on_frame(mut app App) {
 	app.gg.begin()
 	// white square around the paint type chooser
 	app.gg.draw_square_filled(3, 35*(app.paint_type), 24, gx.white)
+	app.gg.draw_square_filled(35*(app.paint_size/4), 3, 24, gx.white)
 
 	app.gg.draw_square_filled(5, 37, 20, gx.hex(blue_ni))
 	app.gg.draw_square_filled(5, 72, 20, gx.hex(black_ni))
+
+	app.gg.draw_circle_filled(37+10,  15, 2, gx.black)
+	app.gg.draw_circle_filled(72+10,  15, 4, gx.black)
+	app.gg.draw_circle_filled(107+10, 15, 6, gx.black)
+	app.gg.draw_circle_filled(107+10, 15, 8, gx.black)
+	app.gg.draw_circle_filled(142+10, 15, 10, gx.black)
+	app.gg.draw_circle_filled(177+10, 15, 12, gx.black)
 	app.draw()
 	//app.gg.show_fps()
 	//app.gg.draw_text(40, 0, "Paint size: ${app.paint_size/2}, Paint type: ${app.paint_type}, Nb water particles: ${app.water_tiles_coords.len}", text_cfg)
@@ -314,23 +322,53 @@ fn on_event(e &gg.Event, mut app App){
         }
         .mouse_up {
             match e.mouse_button{
-                .left{app.mouse_held = false}
+                .left{
+					app.mouse_held = false
+				}
                 else{}
         	}
 		}
         .mouse_down {
             match e.mouse_button{
-                .left{app.mouse_held = true}
+                .left{
+					if in_rect(e.mouse_x, e.mouse_y, x_offset, y_offset, nb_tiles+x_offset, nb_tiles+y_offset){
+						app.mouse_held = true
+					}
+					if in_rect(e.mouse_x, e.mouse_y, 5, 37, 29, 61) {
+						app.paint_type = 1
+					} else if in_rect(e.mouse_x, e.mouse_y, 5, 72, 29, 96) {
+						app.paint_type = 2
+					}
+					if in_rect(e.mouse_x, e.mouse_y, 37, 5, 61, 29) {
+						app.paint_size = 4
+					} else if in_rect(e.mouse_x, e.mouse_y, 72, 5, 96, 29) {
+						app.paint_size = 8
+					}else if in_rect(e.mouse_x, e.mouse_y, 107, 5, 131, 29) {
+						app.paint_size = 12
+					}else if in_rect(e.mouse_x, e.mouse_y, 142, 5, 166, 29) {
+						app.paint_size = 16
+					}else if in_rect(e.mouse_x, e.mouse_y, 177, 5, 201, 29) {
+						app.paint_size = 20
+					}
+				}
                 else{}
         	}
 		}
 		.mouse_scroll{
-			app.paint_size += int(math.sign(e.scroll_y))*2
+			app.paint_size += int(math.sign(e.scroll_y))*4
 		}
         else {}
     }
 	if app.mouse_held{
 		app.mouse_coords[0] = int(e.mouse_x) - x_offset
 		app.mouse_coords[1] = int(e.mouse_y) - y_offset
+	}
+}
+
+fn in_rect(input_x f64, input_y f64, x f64, y f64, x1 f64, y1 f64) bool {
+	if input_x >= x && input_x <= x1 && input_y >= y && input_y <= y1 {
+		return true
+	} else {
+		return false
 	}
 }
