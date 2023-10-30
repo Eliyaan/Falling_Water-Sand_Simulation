@@ -1,7 +1,6 @@
-# Falling Water/Sand
+# Falling Water/Sand Simulation
 
-This project works, but it lacks a few things to be finished. (for example right now to switch between solid blocks (2) and sand (1) you need to use the arrow keys and there is nothing that tells you that you have sand or anything)
+To run this project, clone the repository and if V is already installed you can run it with `v run main.v`.
 
-To run this project, clone the repository and if you have already installed V you can run it with `v run main.v`.
-
-(a little gif/video is comming soon)
+![image](https://github.com/Eliyaan/Falling-Water-Sand/assets/103932369/a2a61b17-e921-4383-b426-e63afc98f34a)
+![image](https://github.com/Eliyaan/Falling-Water-Sand/assets/103932369/c94e2b44-d2a7-4199-98e8-ab1fbed91d26)
