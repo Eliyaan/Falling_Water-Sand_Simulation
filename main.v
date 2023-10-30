@@ -2,14 +2,14 @@ module main
 
 import gg
 import gx
-import rand as rd
+import rand as rd // do not remove, using default_rng from it
 import math.bits
 import math
 
 const (
     win_width    = 740
     win_height   = 740
-    bg_color     = gx.black
+    bg_color     = gx.rgb(148, 226, 213)
 
 	
     pixel_size = 1
@@ -18,8 +18,13 @@ const (
 	sim_size = pixel_size * nb_tiles
     text_cfg = gx.TextCfg{color: gx.green, size: 20, align: .left, vertical_align: .top}
 	x_offset = 30
-	y_offset = 20
-	blue = u32(0xFF4287F5)
+	y_offset = 30
+	blue = u32(0xFFFF_B700)
+	blue_ni = int(0x00B7_FFFF) //non inverted
+	black = u32(0x0000_00FF)
+	black_ni = int(0x0000_00FF) //non inverted
+	orange = u32(0xFF42_87F5)
+	white = u32(0xFFFF_FFFF)
 )
 
 [inline]
@@ -57,7 +62,7 @@ mut:
     gg    &gg.Context = unsafe { nil }
 	tiles_states [nb_tiles][nb_tiles]u8 = [nb_tiles][nb_tiles]u8{init:[nb_tiles]u8{ init:u8(0)}}  // [Ligne][colonne]
 	istream_idx int
-	screen_pixels [nb_tiles][nb_tiles]u32 = [nb_tiles][nb_tiles]u32{init:[nb_tiles]u32{ init:u32(0xFFFF_FFFF)}}
+	screen_pixels [nb_tiles][nb_tiles]u32 = [nb_tiles][nb_tiles]u32{init:[nb_tiles]u32{ init:u32(white)}}
 	water_tiles_coords [][]int 
 	wall_tiles_coords [][]int 
 	mouse_held bool
@@ -87,9 +92,176 @@ fn main() {
     app.gg.run()
 }
 
-[direct_array_access]
+
+
+//[direct_array_access]
 fn on_frame(mut app App) {
 	//painting
+	app.paint_tiles()
+
+	//Process
+	app.process_tiles()
+	
+    //Draw
+	app.gg.begin()
+	// white square around the paint type chooser
+	app.gg.draw_square_filled(3, 35*(app.paint_type), 24, gx.white)
+
+	app.gg.draw_square_filled(5, 37, 20, gx.hex(blue_ni))
+	app.gg.draw_square_filled(5, 72, 20, gx.hex(black_ni))
+	app.draw()
+	//app.gg.show_fps()
+	//app.gg.draw_text(40, 0, "Paint size: ${app.paint_size/2}, Paint type: ${app.paint_type}, Nb water particles: ${app.water_tiles_coords.len}", text_cfg)
+	app.gg.end()
+}
+
+fn (mut app App) process_tiles() {
+	for mut w_coo in app.water_tiles_coords{
+		i := w_coo[0]
+		j := w_coo[1]
+		if i < app.tiles_states.len-1 && app.tiles_states[i+1][j] == 0{ //bas libre
+			if i != 0 && app.tiles_states[i-1][j] == 0{ // Haut libre = descendre
+				if i < app.tiles_states.len-2 && app.tiles_states[i+2][j] == 0{
+					app.tiles_states[i][j]= 0
+					app.screen_pixels[i][j] = white
+					app.tiles_states[i+2][j] = 1
+					app.screen_pixels[i+2][j] = blue
+					w_coo[0] += 2
+				}else if i < app.tiles_states.len-1{
+					app.tiles_states[i][j]= 0
+					app.screen_pixels[i][j] = white
+					app.tiles_states[i+1][j] = 1
+					app.screen_pixels[i+1][j] = blue
+					w_coo[0] += 1
+				}
+			}else{ // haut plein
+				if j != 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
+					if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // deux cotés libres = descendre
+						if i != app.tiles_states.len-2 && app.tiles_states[i+2][j] == 0{
+							app.tiles_states[i][j]= 0
+							app.screen_pixels[i][j] = white
+							app.tiles_states[i+2][j] = 1
+							app.screen_pixels[i+2][j] = blue
+							w_coo[0] += 2
+						}else{
+							app.tiles_states[i][j]= 0
+							app.screen_pixels[i][j] = white
+							app.tiles_states[i+1][j] = 1
+							app.screen_pixels[i+1][j] = blue
+							w_coo[0] += 1
+						}
+					}else{ // droite oqp et gauche libre et haut plein
+						if custom_int_in_range(0, 2) == 0{
+							app.tiles_states[i][j]= 0
+							app.screen_pixels[i][j] = white
+							app.tiles_states[i+1][j] = 1
+							app.screen_pixels[i+1][j] = blue
+							w_coo[0] += 1
+						}else if custom_int_in_range(0, 2) == 0{
+							app.tiles_states[i][j]= 0
+							app.screen_pixels[i][j] = white
+							app.tiles_states[i][j-1] = 1
+							app.screen_pixels[i][j-1] = blue
+							w_coo[1] -= 1
+						}
+					}
+				}else{ // gauche oqp
+					if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // droite libre et gauche oqp et haut plein
+						if custom_int_in_range(0, 2) == 0{
+							app.tiles_states[i][j]= 0
+							app.screen_pixels[i][j] = white
+							app.tiles_states[i+1][j] = 1
+							app.screen_pixels[i+1][j] = blue
+							w_coo[0] += 1
+						}else if custom_int_in_range(0, 2) == 0{
+							app.tiles_states[i][j]= 0
+							app.screen_pixels[i][j] = white
+							app.tiles_states[i][j+1] = 1
+							app.screen_pixels[i][j+1] = blue
+							w_coo[1] += 1
+						}
+					}else{ // gauche et droite oqp et haut plein descendre parfois
+						app.tiles_states[i][j]= 0
+						app.screen_pixels[i][j] = white
+						app.tiles_states[i+1][j] = 1
+						app.screen_pixels[i+1][j] = blue
+						w_coo[0] += 1
+					}						
+				}
+			}
+		}else{ // bas plein
+			if j != 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
+				if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // deux cotés libres 
+					if i < app.tiles_states.len-1 && app.tiles_states[i+1][j+1] == 0 { // diag bas droite libre
+						if app.tiles_states[i+1][j-1] == 0 {  // diag bas gauche libre
+							if custom_int_in_range(0, 2) == 0{
+								app.tiles_states[i][j]= 0
+								app.screen_pixels[i][j] = white
+								app.tiles_states[i+1][j+1] = 1
+								app.screen_pixels[i+1][j+1] = blue
+								w_coo[0] += 1
+								w_coo[1] += 1
+							}else{
+								app.tiles_states[i][j]= 0
+								app.screen_pixels[i][j] = white
+								app.tiles_states[i+1][j-1] = 1
+								app.screen_pixels[i+1][j-1] = blue
+								w_coo[0] += 1
+								w_coo[1] -= 1
+							}
+						}else{ // que diag bas droite libre
+							app.tiles_states[i][j]= 0
+							app.screen_pixels[i][j] = white
+							app.tiles_states[i+1][j+1] = 1
+							app.screen_pixels[i+1][j+1] = blue
+							w_coo[0] += 1
+							w_coo[1] += 1
+						}
+					}else{
+						if i < app.tiles_states.len-1 && app.tiles_states[i+1][j-1] == 0 {  // que diag bas gauche libre
+							app.tiles_states[i][j]= 0
+							app.screen_pixels[i][j] = white
+							app.tiles_states[i+1][j-1] = 1
+							app.screen_pixels[i+1][j-1] = blue
+							w_coo[0] += 1
+							w_coo[1] -= 1
+						}else{ // aucune diag libre mais 2 cotés libres
+							if custom_int_in_range(0,2) == 0{
+								app.tiles_states[i][j]= 0
+								app.screen_pixels[i][j] = white
+								app.tiles_states[i][j+1] = 1
+								app.screen_pixels[i][j+1] = blue
+								w_coo[1] += 1
+							}else{
+								app.tiles_states[i][j]= 0
+								app.screen_pixels[i][j] = white
+								app.tiles_states[i][j-1] = 1
+								app.screen_pixels[i][j-1] = blue
+								w_coo[1] -= 1
+							}
+						}
+					}
+				}else{ // que gauche
+					app.tiles_states[i][j]= 0
+					app.screen_pixels[i][j] = white
+					app.tiles_states[i][j-1] = 1
+					app.screen_pixels[i][j-1] = blue
+					w_coo[1] -= 1
+				}
+			}else{ // pas gauche
+				if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{// que droite libre
+						app.tiles_states[i][j]= 0
+						app.screen_pixels[i][j] = white
+						app.tiles_states[i][j+1] = 1
+						app.screen_pixels[i][j+1] = blue
+						w_coo[1] += 1
+				}
+			}
+		}
+	}
+}
+
+fn (mut app App) paint_tiles() {
 	if app.mouse_held{
 		for l in -app.paint_size..1+app.paint_size{
 			for c in -app.paint_size..1+app.paint_size{
@@ -108,7 +280,7 @@ fn on_frame(mut app App) {
 							}
 						}else if app.paint_type == 2 && app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] == 0{
 							app.tiles_states[app.mouse_coords[1]+l][app.mouse_coords[0]+c] = 2
-							app.screen_pixels[app.mouse_coords[1]+l][app.mouse_coords[0]+c] = 0x0000_00FF
+							app.screen_pixels[app.mouse_coords[1]+l][app.mouse_coords[0]+c] = black
 							app.wall_tiles_coords << [[app.mouse_coords[1]+l, app.mouse_coords[0]+c]]
 						}
 					}
@@ -116,158 +288,6 @@ fn on_frame(mut app App) {
 			}
 		}
 	}
-
-	//Process
-	
-	for mut w_coo in app.water_tiles_coords{
-		i := w_coo[0]
-		j := w_coo[1]
-		if i != app.tiles_states.len-1 && app.tiles_states[i+1][j] == 0{ //bas libre
-			if i != 0 && app.tiles_states[i-1][j] == 0{ // Haut libre = descendre
-				if i != app.tiles_states.len-2 && app.tiles_states[i+2][j] == 0{
-					app.tiles_states[i][j]= 0
-					app.screen_pixels[i][j] = 0xFFFF_FFFF
-					app.tiles_states[i+2][j] = 1
-					app.screen_pixels[i+2][j] = blue
-					w_coo[0] += 2
-				}else{
-					app.tiles_states[i][j]= 0
-					app.screen_pixels[i][j] = 0xFFFF_FFFF
-					app.tiles_states[i+1][j] = 1
-					app.screen_pixels[i+1][j] = blue
-					w_coo[0] += 1
-				}
-			}else{ // haut plein
-				if j != 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
-					if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // deux cotés libres = descendre
-						if i != app.tiles_states.len-2 && app.tiles_states[i+2][j] == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i+2][j] = 1
-							app.screen_pixels[i+2][j] = blue
-							w_coo[0] += 2
-						}else{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i+1][j] = 1
-							app.screen_pixels[i+1][j] = blue
-							w_coo[0] += 1
-						}
-					}else{ // droite oqp et gauche libre et haut plein
-						if custom_int_in_range(0, 2) == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i+1][j] = 1
-							app.screen_pixels[i+1][j] = blue
-							w_coo[0] += 1
-						}else if custom_int_in_range(0, 2) == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i][j-1] = 1
-							app.screen_pixels[i][j-1] = blue
-							w_coo[1] -= 1
-						}
-					}
-				}else{ // gauche oqp
-					if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // droite libre et gauche oqp et haut plein
-						if custom_int_in_range(0, 2) == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i+1][j] = 1
-							app.screen_pixels[i+1][j] = blue
-							w_coo[0] += 1
-						}else if custom_int_in_range(0, 2) == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i][j+1] = 1
-							app.screen_pixels[i][j+1] = blue
-							w_coo[1] += 1
-						}
-					}else{ // gauche et droite oqp et haut plein descendre parfois
-						app.tiles_states[i][j]= 0
-						app.screen_pixels[i][j] = 0xFFFF_FFFF
-						app.tiles_states[i+1][j] = 1
-						app.screen_pixels[i+1][j] = blue
-						w_coo[0] += 1
-					}						
-				}
-			}
-		}else{ // bas plein
-			if j != 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
-				if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // deux cotés libres 
-					if app.tiles_states[i+1][j+1] == 0 { // diag bas droite libre
-						if app.tiles_states[i+1][j-1] == 0 {  // diag bas gauche libre
-							if custom_int_in_range(0, 2) == 0{
-								app.tiles_states[i][j]= 0
-								app.screen_pixels[i][j] = 0xFFFF_FFFF
-								app.tiles_states[i+1][j+1] = 1
-								app.screen_pixels[i+1][j+1] = blue
-								w_coo[0] += 1
-								w_coo[1] += 1
-							}else{
-								app.tiles_states[i][j]= 0
-								app.screen_pixels[i][j] = 0xFFFF_FFFF
-								app.tiles_states[i+1][j-1] = 1
-								app.screen_pixels[i+1][j-1] = blue
-								w_coo[0] += 1
-								w_coo[1] -= 1
-							}
-						}else{ // que diag bas droite libre
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i+1][j+1] = 1
-							app.screen_pixels[i+1][j+1] = blue
-							w_coo[0] += 1
-							w_coo[1] += 1
-						}
-					}else{
-						if app.tiles_states[i+1][j-1] == 0 {  // que diag bas gauche libre
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = 0xFFFF_FFFF
-							app.tiles_states[i+1][j-1] = 1
-							app.screen_pixels[i+1][j-1] = blue
-							w_coo[0] += 1
-							w_coo[1] -= 1
-						}else{ // aucune diag libre mais 2 cotés libres
-							if custom_int_in_range(0,2) == 0{
-								app.tiles_states[i][j]= 0
-								app.screen_pixels[i][j] = 0xFFFF_FFFF
-								app.tiles_states[i][j+1] = 1
-								app.screen_pixels[i][j+1] = blue
-								w_coo[1] += 1
-							}else{
-								app.tiles_states[i][j]= 0
-								app.screen_pixels[i][j] = 0xFFFF_FFFF
-								app.tiles_states[i][j-1] = 1
-								app.screen_pixels[i][j-1] = blue
-								w_coo[1] -= 1
-							}
-						}
-					}
-				}else{ // que gauche
-					app.tiles_states[i][j]= 0
-					app.screen_pixels[i][j] = 0xFFFF_FFFF
-					app.tiles_states[i][j-1] = 1
-					app.screen_pixels[i][j-1] = blue
-					w_coo[1] -= 1
-				}
-			}else{ // pas gauche
-				if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{// que droite libre
-						app.tiles_states[i][j]= 0
-						app.screen_pixels[i][j] = 0xFFFF_FFFF
-						app.tiles_states[i][j+1] = 1
-						app.screen_pixels[i][j+1] = blue
-						w_coo[1] += 1
-				}
-			}
-		}
-	}
-    //Draw
-	app.gg.begin()
-	app.draw()
-	app.gg.show_fps()
-	app.gg.draw_text(40, 0, "Paint size: ${app.paint_size/2}, Paint type: ${app.paint_type}, Nb water particles: ${app.water_tiles_coords.len}", text_cfg)
-	app.gg.end()
 }
 
 fn (mut app App) draw() {
