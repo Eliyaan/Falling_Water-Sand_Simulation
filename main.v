@@ -92,9 +92,6 @@ fn main() {
     app.gg.run()
 }
 
-
-
-//[direct_array_access]
 fn on_frame(mut app App) {
 	//painting
 	app.paint_tiles()
@@ -118,151 +115,92 @@ fn on_frame(mut app App) {
 	app.gg.draw_circle_filled(142+10, 15, 10, gx.black)
 	app.gg.draw_circle_filled(177+10, 15, 12, gx.black)
 	app.draw()
-	//app.gg.show_fps()
+	// app.gg.show_fps()
 	//app.gg.draw_text(40, 0, "Paint size: ${app.paint_size/2}, Paint type: ${app.paint_type}, Nb water particles: ${app.water_tiles_coords.len}", text_cfg)
 	app.gg.end()
 }
 
+[direct_array_access; inline]
+fn (mut app App) update_water_tile(nb int, i_delta int, j_delta int) {
+	i := app.water_tiles_coords[nb][0]
+	j := app.water_tiles_coords[nb][1]
+	app.tiles_states[i][j]= 0
+	app.screen_pixels[i][j] = white
+	app.tiles_states[i+i_delta][j+j_delta] = 1
+	app.screen_pixels[i+i_delta][j+j_delta] = blue
+	app.water_tiles_coords[nb][0] += i_delta
+	app.water_tiles_coords[nb][1] += j_delta
+}
+
+[direct_array_access]
 fn (mut app App) process_tiles() {
-	for mut w_coo in app.water_tiles_coords{
+	for nb, mut w_coo in app.water_tiles_coords{
 		i := w_coo[0]
 		j := w_coo[1]
-		if i < app.tiles_states.len-1 && app.tiles_states[i+1][j] == 0{ //bas libre
+		if i+1 < nb_tiles && app.tiles_states[i+1][j] == 0{ //bas libre
 			if i != 0 && app.tiles_states[i-1][j] == 0{ // Haut libre = descendre
-				if i < app.tiles_states.len-2 && app.tiles_states[i+2][j] == 0{
-					app.tiles_states[i][j]= 0
-					app.screen_pixels[i][j] = white
-					app.tiles_states[i+2][j] = 1
-					app.screen_pixels[i+2][j] = blue
-					w_coo[0] += 2
-				}else if i < app.tiles_states.len-1{
-					app.tiles_states[i][j]= 0
-					app.screen_pixels[i][j] = white
-					app.tiles_states[i+1][j] = 1
-					app.screen_pixels[i+1][j] = blue
-					w_coo[0] += 1
+				if i+2 < nb_tiles && app.tiles_states[i+2][j] == 0{
+					app.update_water_tile(nb, 2, 0)
+				}else if i+1 < nb_tiles{
+					app.update_water_tile(nb, 1, 0)
 				}
 			}else{ // haut plein
-				if j != 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
-					if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // deux cotés libres = descendre
-						if i != app.tiles_states.len-2 && app.tiles_states[i+2][j] == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = white
-							app.tiles_states[i+2][j] = 1
-							app.screen_pixels[i+2][j] = blue
-							w_coo[0] += 2
+				if j > 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
+					if j+1 < nb_tiles && app.tiles_states[i][j+1] == 0{ // deux cotés libres = descendre
+						if i+2 < nb_tiles && app.tiles_states[i+2][j] == 0{
+							app.update_water_tile(nb, 2, 0)
 						}else{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = white
-							app.tiles_states[i+1][j] = 1
-							app.screen_pixels[i+1][j] = blue
-							w_coo[0] += 1
+							app.update_water_tile(nb, 1, 0)
 						}
 					}else{ // droite oqp et gauche libre et haut plein
 						if custom_int_in_range(0, 2) == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = white
-							app.tiles_states[i+1][j] = 1
-							app.screen_pixels[i+1][j] = blue
-							w_coo[0] += 1
+							app.update_water_tile(nb, 1, 0)
 						}else if custom_int_in_range(0, 2) == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = white
-							app.tiles_states[i][j-1] = 1
-							app.screen_pixels[i][j-1] = blue
-							w_coo[1] -= 1
+							app.update_water_tile(nb, 0, -1)
 						}
 					}
 				}else{ // gauche oqp
 					if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // droite libre et gauche oqp et haut plein
 						if custom_int_in_range(0, 2) == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = white
-							app.tiles_states[i+1][j] = 1
-							app.screen_pixels[i+1][j] = blue
-							w_coo[0] += 1
+							app.update_water_tile(nb, 1, 0)
 						}else if custom_int_in_range(0, 2) == 0{
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = white
-							app.tiles_states[i][j+1] = 1
-							app.screen_pixels[i][j+1] = blue
-							w_coo[1] += 1
+							app.update_water_tile(nb, 0, 1)
 						}
 					}else{ // gauche et droite oqp et haut plein descendre parfois
-						app.tiles_states[i][j]= 0
-						app.screen_pixels[i][j] = white
-						app.tiles_states[i+1][j] = 1
-						app.screen_pixels[i+1][j] = blue
-						w_coo[0] += 1
+						app.update_water_tile(nb, 1, 0)
 					}						
 				}
 			}
 		}else{ // bas plein
-			if j != 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
-				if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{ // deux cotés libres 
-					if i < app.tiles_states.len-1 && app.tiles_states[i+1][j+1] == 0 { // diag bas droite libre
+			if j > 0 && app.tiles_states[i][j-1] == 0{  // gauche libre
+				if j+1 < nb_tiles && app.tiles_states[i][j+1] == 0{ // deux cotés libres 
+					if i+1 < nb_tiles && app.tiles_states[i+1][j+1] == 0 { // diag bas droite libre
 						if app.tiles_states[i+1][j-1] == 0 {  // diag bas gauche libre
 							if custom_int_in_range(0, 2) == 0{
-								app.tiles_states[i][j]= 0
-								app.screen_pixels[i][j] = white
-								app.tiles_states[i+1][j+1] = 1
-								app.screen_pixels[i+1][j+1] = blue
-								w_coo[0] += 1
-								w_coo[1] += 1
+								app.update_water_tile(nb, 1, 1)
 							}else{
-								app.tiles_states[i][j]= 0
-								app.screen_pixels[i][j] = white
-								app.tiles_states[i+1][j-1] = 1
-								app.screen_pixels[i+1][j-1] = blue
-								w_coo[0] += 1
-								w_coo[1] -= 1
+								app.update_water_tile(nb, 1, -1)
 							}
 						}else{ // que diag bas droite libre
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = white
-							app.tiles_states[i+1][j+1] = 1
-							app.screen_pixels[i+1][j+1] = blue
-							w_coo[0] += 1
-							w_coo[1] += 1
+							app.update_water_tile(nb, 1, 1)
 						}
 					}else{
-						if i < app.tiles_states.len-1 && app.tiles_states[i+1][j-1] == 0 {  // que diag bas gauche libre
-							app.tiles_states[i][j]= 0
-							app.screen_pixels[i][j] = white
-							app.tiles_states[i+1][j-1] = 1
-							app.screen_pixels[i+1][j-1] = blue
-							w_coo[0] += 1
-							w_coo[1] -= 1
+						if i+1 < nb_tiles && app.tiles_states[i+1][j-1] == 0 {  // que diag bas gauche libre
+							app.update_water_tile(nb, 1, -1)
 						}else{ // aucune diag libre mais 2 cotés libres
 							if custom_int_in_range(0,2) == 0{
-								app.tiles_states[i][j]= 0
-								app.screen_pixels[i][j] = white
-								app.tiles_states[i][j+1] = 1
-								app.screen_pixels[i][j+1] = blue
-								w_coo[1] += 1
+								app.update_water_tile(nb, 0, 1)
 							}else{
-								app.tiles_states[i][j]= 0
-								app.screen_pixels[i][j] = white
-								app.tiles_states[i][j-1] = 1
-								app.screen_pixels[i][j-1] = blue
-								w_coo[1] -= 1
+								app.update_water_tile(nb, 0, -1)
 							}
 						}
 					}
 				}else{ // que gauche
-					app.tiles_states[i][j]= 0
-					app.screen_pixels[i][j] = white
-					app.tiles_states[i][j-1] = 1
-					app.screen_pixels[i][j-1] = blue
-					w_coo[1] -= 1
+					app.update_water_tile(nb, 0, -1)
 				}
 			}else{ // pas gauche
 				if j != nb_tiles-1 && app.tiles_states[i][j+1] == 0{// que droite libre
-						app.tiles_states[i][j]= 0
-						app.screen_pixels[i][j] = white
-						app.tiles_states[i][j+1] = 1
-						app.screen_pixels[i][j+1] = blue
-						w_coo[1] += 1
+					app.update_water_tile(nb, 0, 1)
 				}
 			}
 		}
