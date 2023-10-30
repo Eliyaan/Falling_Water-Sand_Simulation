@@ -1,4 +1,4 @@
-# Falling-Sand
+# Falling Water/Sand
 
 This project works, but it lacks a few things to be finished. (for example right now to switch between solid blocks (2) and sand (1) you need to use the arrow keys and there is nothing that tells you that you have sand or anything)
 
