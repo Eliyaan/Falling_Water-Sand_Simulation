@@ -6,32 +6,32 @@ import rand as rd // do not remove, using default_rng from it
 import math.bits
 import math
 
-const (
-	win_width  = 740
-	win_height = 740
-	bg_color   = gx.rgb(148, 226, 213)
+const win_width = 740
+const win_height = 740
+const bg_color = gx.rgb(148, 226, 213)
 
-	pixel_size = 1
-	nb_tiles   = 680
-	refresh    = 65000
-	sim_size   = pixel_size * nb_tiles
-	text_cfg   = gx.TextCfg{
-		color: gx.green
-		size: 20
-		align: .left
-		vertical_align: .top
-	}
-	x_offset = 30
-	y_offset = 30
-	blue     = u32(0xFFFF_B700)
-	blue_ni  = int(0x00B7_FFFF) // non inverted
-	black    = u32(0xFF00_0000)
-	black_ni = int(0x0000_00FF) // non inverted
-	orange   = u32(0xFF42_87F5)
-	white    = u32(0xFFFF_FFFF)
-)
+const pixel_size = 1
+const nb_tiles = 680
+const refresh = 65000
+const sim_size = pixel_size * nb_tiles
+const text_cfg = gx.TextCfg{
+	color: gx.green
+	size: 20
+	align: .left
+	vertical_align: .top
+}
+const x_offset = 30
+const y_offset = 30
+const blue = u32(0xFFFF_B700)
+const blue_ni = int(0x00B7_FFFF) // non inverted
 
-[inline]
+const black = u32(0xFF00_0000)
+const black_ni = int(0x0000_00FF) // non inverted
+
+const orange = u32(0xFF42_87F5)
+const white = u32(0xFFFF_FFFF)
+
+@[inline]
 fn u32n(max u32) int {
 	mask := (u32(1) << (bits.len_32(max) + 1)) - 1
 	for {
@@ -43,7 +43,7 @@ fn u32n(max u32) int {
 	return 0
 }
 
-[inline]
+@[inline]
 fn custom_int_in_range(min int, max int) int {
 	output := min + u32n(u32(max - min))
 	assert output < max
@@ -53,8 +53,8 @@ fn custom_int_in_range(min int, max int) int {
 
 struct App {
 mut:
-	gg                 &gg.Context = unsafe { nil }
-	tiles_states       [nb_tiles][nb_tiles]u8 = [nb_tiles][nb_tiles]u8{init: [nb_tiles]u8{init: u8(0)}}
+	gg           &gg.Context = unsafe { nil }
+	tiles_states [nb_tiles][nb_tiles]u8 = [nb_tiles][nb_tiles]u8{init: [nb_tiles]u8{init: u8(0)}}
 	// [Ligne][colonne]
 	istream_idx        int
 	screen_pixels      [nb_tiles][nb_tiles]u32 = [nb_tiles][nb_tiles]u32{init: [nb_tiles]u32{init: u32(white)}}
@@ -67,9 +67,7 @@ mut:
 }
 
 fn main() {
-	mut app := &App{
-		gg: 0
-	}
+	mut app := &App{}
 	app.gg = gg.new_context(
 		width: win_width
 		height: win_height
@@ -116,7 +114,7 @@ fn on_frame(mut app App) {
 	app.gg.end()
 }
 
-[direct_array_access; inline]
+@[direct_array_access; inline]
 fn (mut app App) update_water_tile(nb int, i_delta int, j_delta int) {
 	i := app.water_tiles_coords[nb][0]
 	j := app.water_tiles_coords[nb][1]
@@ -128,7 +126,7 @@ fn (mut app App) update_water_tile(nb int, i_delta int, j_delta int) {
 	app.water_tiles_coords[nb][1] += j_delta
 }
 
-[direct_array_access]
+@[direct_array_access]
 fn (mut app App) process_tiles() {
 	for nb, mut w_coo in app.water_tiles_coords {
 		i := w_coo[0]
