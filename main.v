@@ -22,8 +22,8 @@ const text_cfg = gx.TextCfg{
 }
 const x_offset = 30
 const y_offset = 30
-const blue = u32(0xFFFF_B700)
-const blue_ni = int(0x00B7_FFFF) // non inverted
+const blue = u32(0x88FF_0000)
+const blue_ni = int(0x0000_88FF) // non inverted
 
 const black = u32(0xFF00_0000)
 const black_ni = int(0x0000_00FF) // non inverted
@@ -99,7 +99,7 @@ fn on_frame(mut app App) {
 	app.gg.draw_square_filled(35 * (app.paint_size / 4), 3, 24, gx.white)
 
 	app.gg.draw_square_filled(5, 37, 20, gx.hex(blue_ni))
-	app.gg.draw_square_filled(5, 72, 20, gx.hex(black_ni))
+	app.gg.draw_square_filled(5, 72, 20, gx.black)
 
 	app.gg.draw_circle_filled(37 + 10, 15, 2, gx.black)
 	app.gg.draw_circle_filled(72 + 10, 15, 4, gx.black)
