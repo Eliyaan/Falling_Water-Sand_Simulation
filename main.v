@@ -1,21 +1,20 @@
 module main
 
 import gg
-import gx
-import rand as rd // do not remove, using default_rng from it
+import rand as _ // do not remove, using default_rng from it
 import math.bits
 import math
 
 const win_width = 740
 const win_height = 740
-const bg_color = gx.rgb(148, 226, 213)
+const bg_color = gg.rgb(148, 226, 213)
 
 const pixel_size = 1
 const nb_tiles = 680
 const refresh = 65000
 const sim_size = pixel_size * nb_tiles
-const text_cfg = gx.TextCfg{
-	color: gx.green
+const text_cfg = gg.TextCfg{
+	color: gg.green
 	size: 20
 	align: .left
 	vertical_align: .top
@@ -95,18 +94,18 @@ fn on_frame(mut app App) {
 	app.gg.begin()
 
 	// white square around the paint type chooser
-	app.gg.draw_square_filled(3, 35 * (app.paint_type), 24, gx.white)
-	app.gg.draw_square_filled(35 * (app.paint_size / 4), 3, 24, gx.white)
+	app.gg.draw_square_filled(3, 35 * (app.paint_type), 24, gg.white)
+	app.gg.draw_square_filled(35 * (app.paint_size / 4), 3, 24, gg.white)
 
-	app.gg.draw_square_filled(5, 37, 20, gx.hex(blue_ni))
-	app.gg.draw_square_filled(5, 72, 20, gx.black)
+	app.gg.draw_square_filled(5, 37, 20, gg.hex(blue_ni))
+	app.gg.draw_square_filled(5, 72, 20, gg.black)
 
-	app.gg.draw_circle_filled(37 + 10, 15, 2, gx.black)
-	app.gg.draw_circle_filled(72 + 10, 15, 4, gx.black)
-	app.gg.draw_circle_filled(107 + 10, 15, 6, gx.black)
-	app.gg.draw_circle_filled(107 + 10, 15, 8, gx.black)
-	app.gg.draw_circle_filled(142 + 10, 15, 10, gx.black)
-	app.gg.draw_circle_filled(177 + 10, 15, 12, gx.black)
+	app.gg.draw_circle_filled(37 + 10, 15, 2, gg.black)
+	app.gg.draw_circle_filled(72 + 10, 15, 4, gg.black)
+	app.gg.draw_circle_filled(107 + 10, 15, 6, gg.black)
+	app.gg.draw_circle_filled(107 + 10, 15, 8, gg.black)
+	app.gg.draw_circle_filled(142 + 10, 15, 10, gg.black)
+	app.gg.draw_circle_filled(177 + 10, 15, 12, gg.black)
 	app.draw()
 
 	// app.gg.show_fps()
